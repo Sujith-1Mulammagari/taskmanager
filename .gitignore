@@ -1,0 +1,71 @@
+
+frontend/node_modules/
+frontend/build/
+
+# Spring Boot
+backend/target/
+
+# Environment
+frontend/.env
+backend/.env
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+# Root project
+frontend/node_modules/
+frontend/build/
+backend/target/
+
+# Nested project (currently in repository)
+taskmanager/frontend/node_modules/
+taskmanager/frontend/build/
+taskmanager/backend/target/
+
+# Environment
+.env
+frontend/.env
+backend/.env
+taskmanager/frontend/.env
+taskmanager/backend/.env
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+# React
+frontend/node_modules/
+frontend/build/
+
+# Spring Boot
+backend/target/
+
+# Environment files
+.env
+frontend/.env
+backend/.env
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

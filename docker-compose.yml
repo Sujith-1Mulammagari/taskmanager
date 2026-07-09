@@ -1,0 +1,126 @@
+# ============================================================
+# DOCKER COMPOSE - Orchestrates multiple containers together
+# ============================================================
+#
+# WHAT IS DOCKER COMPOSE?
+# Instead of running 3 separate 'docker run' commands manually,
+# docker-compose.yml defines ALL services and runs them together
+#
+# Command: docker-compose up -d
+#   -d = detached mode (runs in background)
+#
+# Our 3 services:
+#   1. mysql    - Database container
+#   2. backend  - Spring Boot API container  
+#   3. frontend - React + Nginx container
+#
+# CONTAINER COMMUNICATION:
+# By default, Docker containers are isolated
+# docker-compose creates a NETWORK so they can talk to each other
+# Containers reference each other by SERVICE NAME (not IP address)
+# ============================================================
+
+version: '3.8'
+
+services:
+
+  # ============================================================
+  # 1. MYSQL DATABASE
+  # ============================================================
+  mysql:
+    image: mysql:8.0          # Use official MySQL 8 image from Docker Hub
+    container_name: taskmanager-mysql
+    
+    environment:
+      MYSQL_ROOT_PASSWORD: root          # Root password
+      MYSQL_DATABASE: taskmanager_db     # Creates this database automatically
+      MYSQL_USER: taskuser               # Create a non-root user
+      MYSQL_PASSWORD: taskpassword       # Non-root user password
+    
+    ports:
+      - "3306:3306"    # host_port:container_port
+                       # Access MySQL from host with: mysql -h localhost -P 3306
+    
+    volumes:
+      - mysql_data:/var/lib/mysql   # Persist MySQL data (survives container restarts)
+    
+    # Health check: docker waits for MySQL to be ready before starting backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s      # Check every 10 seconds
+      timeout: 5s        # Timeout after 5 seconds
+      retries: 5         # Retry 5 times before giving up
+    
+    networks:
+      - taskmanager-network
+
+  # ============================================================
+  # 2. SPRING BOOT BACKEND
+  # ============================================================
+  backend:
+    build:
+      context: ./backend     # Build Dockerfile from ./backend directory
+      dockerfile: Dockerfile
+    
+    container_name: taskmanager-backend
+    
+    # Override application.properties with Docker environment variables
+    # Spring Boot reads these env vars: spring.datasource.url etc.
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/taskmanager_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      # ↑ 'mysql' is the service name above - Docker resolves it to the container IP
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    
+    ports:
+      - "8080:8080"
+    
+    # depends_on: don't start backend until mysql is healthy
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+    networks:
+      - taskmanager-network
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # ============================================================
+  # 3. REACT FRONTEND (Nginx)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    
+    container_name: taskmanager-frontend
+    
+    ports:
+      - "80:80"      # Access app at http://localhost (port 80)
+    
+    depends_on:
+      - backend
+    
+    networks:
+      - taskmanager-network
+    
+    restart: unless-stopped
+
+# ============================================================
+# VOLUMES - Persistent storage
+# ============================================================
+# Volumes persist data even when containers are stopped/deleted
+# mysql_data stores all MySQL database files
+volumes:
+  mysql_data:
+    driver: local
+
+# ============================================================
+# NETWORKS - Private network for containers to communicate
+# ============================================================
+networks:
+  taskmanager-network:
+    driver: bridge
+    # bridge = each container gets its own IP, can communicate by service name
