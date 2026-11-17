@@ -33,7 +33,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Allow React dev server
-        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("https://mskr2806.duckdns.org");
 
         // Allow all HTTP headers (Content-Type, Authorization, etc.)
         config.addAllowedHeader("*");
